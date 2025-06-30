@@ -23,10 +23,10 @@ def get_usd_to_jpy() -> float | None:
         rate = data["rates"]["JPY"]
         return rate
     except Exception as e:
-        print("Exception thrown while fetching rate: {e}")
+        print(f"Exception thrown while fetching rate: {e}")
         return None
 
-def check_rate():
+def check_rate() -> None:
     rate = get_usd_to_jpy()
     if rate is None:
         return None
@@ -38,14 +38,14 @@ def check_rate():
     else:
         print("Rate not high enough yet. No action needed.")
 
-def send_telegram_alert(rate):
+def send_telegram_alert(rate) -> None:
     try:
         bot = Bot(token=TELEGRAM_TOKEN)
         msg = f"USD/JPY Alert: {rate:.2f} ¥/USD — consider transferring!"
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=msg)
         print("📨 Telegram alert sent.")
     except Exception as e:
-        print("Failed to send Telegram alert:", e)
+        print(f"Failed to send Telegram alert: {e}")
 
 if __name__ == "__main__":
     check_rate()
