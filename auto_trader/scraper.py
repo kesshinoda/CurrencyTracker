@@ -1,12 +1,12 @@
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 import asyncio
+import os
 import requests
 import json
 import csv
 from bs4 import BeautifulSoup
 import traceback
-import cloudscraper
 import zendriver as ZenDriver
 
 class UsedCarsScraper():
@@ -195,20 +195,39 @@ class UsedCarsScraper():
 
         return results
 
+    async def add_trims_to_url(self, url:str, trim_codes_dicts:list) -> str:
+        for model in trim_codes_dicts.keys():
+            for trim_code in trim_codes_dicts[model]:
+                trim_code = trim_code.replace(' ', '%20')
+                url+=f"trimCode={model.upper()}%7C{trim_code}&"
+        return url[:len(url)-1] # remove the last '&'
+
     async def construct_url(self, search_results_preference:dict) -> str:
-        #https://www.autotrader.com/cars-for-sale/hatchback/honda/civic/ashland-wi?dealType=greatprice&marketExtension=off&searchRadius=200&sortBy=derivedpriceASC&startYear=2022&trimCode=CIVIC%7CEX-L&trimCode=CIVIC%7CLX&trimCode=CIVIC%7CSport&trimCode=CIVIC%7CSport%20Touring
-        
-        base_url = "https://www.autotrader.com/cars-for-sale/"
-        url = base_url + f"{search_results_preference["body_type"]}"
-        
+        url = "https://www.autotrader.com/cars-for-sale/"
+        url += f"{search_results_preference["body_type"]}/"
+        url += f"{search_results_preference["make"]}/"
+        url += f"{search_results_preference["model"]}/"
+        url += f"{search_results_preference["city_state"]}?"
+        url += f"dealType={search_results_preference["deal_type"]}&"
+        url += f"marketExtension={search_results_preference["inlude_delivery_options"]}&"
+        url += f"searchRadius={search_results_preference["search_radius"]}&"
+        url += f"sortBy={search_results_preference["sort_type"]}&"
+        url += f"startYear={search_results_preference["min_year"]}&"
+        constructed_url = await self.add_trims_to_url(url, search_results_preference["trim_codes"])
+        return constructed_url
+    
+    async def get_car_list(self) -> list:
+        return []
 
     async def main(self, search_results_preference:dict):
         self._browser = await ZenDriver.start()
         self._page = self._browser.main_tab
-        await self._page.get("https://www.autotrader.com/cars-for-sale/hatchback/honda/civic/ashland-wi?dealType=greatprice&marketExtension=off&searchRadius=200&sortBy=derivedpriceASC&startYear=2022&trimCode=CIVIC%7CEX-L&trimCode=CIVIC%7CLX&trimCode=CIVIC%7CSport&trimCode=CIVIC%7CSport%20Touring")
+        await self._page.maximize()
+        results_page_url = await self.construct_url(search_results_preference)
+        print(results_page_url)
+        await self._page.get(results_page_url)
+
         await asyncio.sleep(1000)
-        # results_page_url = self.construct_url(search_results_preference)
-    
 
 if __name__ == "__main__":
     # car_info = {
@@ -221,13 +240,13 @@ if __name__ == "__main__":
         "make": "honda",
         "model": "civic",
         "min_year": "2022",
-        "place": "<city_name>-<state_code>", #test
+        "city_state": os.getenv("LOCAL_PLACE_NAME"),# <city_name>-<state_abbreviation_code> with lower case
         "deal_type": "greatprice",
         "inlude_delivery_options": "off",
         "search_radius": "200",
         "sort_type": "derivedpriceASC", 
-        "trim_code": {"CIVIC": ["EX-L", "LX", "Sport", "Sport%20Touring"]},
-        "zip": ""
+        "trim_codes": {"CIVIC": ["EX-L", "LX", "Sport", "Sport Touring"]},
+        # "zip_code": os.getenv("LOCAL_ZIP_CODE"),
     }
 
     class_instance = UsedCarsScraper()
