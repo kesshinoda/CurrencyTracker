@@ -3,10 +3,6 @@
 import asyncio
 import os
 import requests
-import json
-import csv
-from bs4 import BeautifulSoup
-import traceback
 import zendriver as ZenDriver
 
 from zendriver.core.connection import ProtocolException
