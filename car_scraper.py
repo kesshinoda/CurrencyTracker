@@ -24,15 +24,15 @@ class UsedCarsScraper():
 
     async def construct_url(self, search_results_preference:dict) -> str:
         url = "https://www.autotrader.com/cars-for-sale/"
-        url += f"{search_results_preference["body_type"]}/"
-        url += f"{search_results_preference["make"]}/"
-        url += f"{search_results_preference["model"]}/"
-        url += f"{search_results_preference["city_state"]}?"
-        url += f"dealType={search_results_preference["deal_type"]}&"
-        url += f"marketExtension={search_results_preference["inlude_delivery_options"]}&"
-        url += f"searchRadius={search_results_preference["search_radius"]}&"
-        url += f"sortBy={search_results_preference["sort_type"]}&"
-        url += f"startYear={search_results_preference["min_year"]}&"
+        url += f"{search_results_preference['body_type']}/"
+        url += f"{search_results_preference['make']}/"
+        url += f"{search_results_preference['model']}/"
+        url += f"{search_results_preference['city_state']}?"
+        url += f"dealType={search_results_preference['deal_type']}&"
+        url += f"marketExtension={search_results_preference['inlude_delivery_options']}&"
+        url += f"searchRadius={search_results_preference['search_radius']}&"
+        url += f"sortBy={search_results_preference['sort_type']}&"
+        url += f"startYear={search_results_preference['min_year']}&"
         constructed_url = await self.add_trims_to_url(url, search_results_preference["trim_codes"])
         return constructed_url
     
@@ -74,7 +74,7 @@ class UsedCarsScraper():
         return cars_info
     
     async def send_telegram_image_url(self, image_url:str, caption:str):
-        telegram_url = f"https://api.telegram.org/bot{os.getenv("TELEGRAM_TOKEN_1")}/sendPhoto"
+        telegram_url = f"https://api.telegram.org/bot{os.getenv('TELEGRAM_TOKEN_1')}/sendPhoto"
         payload = {
             'chat_id': os.getenv("TELEGRAM_CHAT_ID"),
             'photo': image_url,
