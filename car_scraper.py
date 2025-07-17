@@ -85,7 +85,7 @@ class UsedCarsScraper():
         return response.status_code == 200
     
     async def main(self, search_results_preference:dict, headless:bool):
-        self._browser = await ZenDriver.start(headless=headless)
+        self._browser = await ZenDriver.start(headless=headless, no_sandbox=True)
         self._page = self._browser.main_tab
         await self._page.maximize()
         results_page_url = await self.construct_url(search_results_preference)
