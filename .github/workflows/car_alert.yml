@@ -1,0 +1,31 @@
+name: Car Alert Bot
+
+on:
+  schedule:
+    - cron: "0 14 * * *"  # 14:00 UTC (9:00 AM Central)
+  workflow_dispatch:
+
+jobs:
+  run-car-scraper:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run car scraper script
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN_1 }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          LOCAL_PLACE_NAME: ${{ secrets.LOCAL_PLACE_NAME }}
+        run: |
+          python car_scraper.py
