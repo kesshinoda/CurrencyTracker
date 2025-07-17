@@ -24,7 +24,7 @@ jobs:
 
       - name: Run car scraper script
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN_1 }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           LOCAL_PLACE_NAME: ${{ secrets.LOCAL_PLACE_NAME }}
         run: |
