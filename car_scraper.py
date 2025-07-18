@@ -50,12 +50,12 @@ class UsedCarsScraper():
     
     def extract_car_info(self, car_info_tile:WebElement) -> dict | None:
         try:
-            title = (car_info_tile.find_element(By.XPATH, "//h2[@data-cmp='subheading']", )).text
-            car_img_src = (car_info_tile.find_element(By.XPATH, "//img[@data-cmp='inventoryImage']")).get_attribute("src")            
-            car_mileage = (car_info_tile.find_element(By.XPATH, "//div[@data-cmp='mileageSpecification']")).text
-            car_price = (car_info_tile.find_element(By.XPATH, "//div[@data-cmp='pricing']")).text
-            owner_distance = (car_info_tile.find_element(By.XPATH, "//div[@data-cmp='ownerDistance']")).text
-            owner_phone_number = (car_info_tile.find_element(By.XPATH, "//span[@data-cmp='phoneNumber']")).text
+            title = car_info_tile.find_element(By.XPATH, ".//h2[@data-cmp='subheading']").text
+            car_img_src = car_info_tile.find_element(By.XPATH, ".//img[@data-cmp='inventoryImage']").get_attribute("src")            
+            car_mileage = car_info_tile.find_element(By.XPATH, ".//div[@data-cmp='mileageSpecification']").text
+            car_price = car_info_tile.find_element(By.XPATH, ".//div[@data-cmp='pricing']").text
+            owner_distance = car_info_tile.find_element(By.XPATH, ".//div[@data-cmp='ownerDistance']").text
+            owner_phone_number = car_info_tile.find_element(By.XPATH, ".//span[@data-cmp='phoneNumber']").text
         except Exception as e:
             print(f"Failed to extract car info: {e}")
             return None
@@ -72,14 +72,20 @@ class UsedCarsScraper():
     def get_car_list(self, list_length:int=3) -> list | None:
         cars_info = []
         try :
-            items_list = WebDriverWait(self._driver, 30).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']")))
+            items_list = WebDriverWait(self._driver, 30).until(
+                EC.presence_of_all_elements_located(
+                    (By.CSS_SELECTOR, "div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']")
+                )  
+            )
         except TimeoutException:
             print("Failed to load the results page")
             return None
-        for item_index in range(1, list_length+1):
+        num_items_to_extract = min(list_length, len(items_list))
+        for item_index in range(1, num_items_to_extract+1):
             extracted_info = self.extract_car_info(items_list[item_index])
             if(extracted_info is None):
                 return None
+            print(extracted_info)
             cars_info.append(extracted_info)
         return cars_info
     
@@ -102,16 +108,16 @@ class UsedCarsScraper():
         results = self.get_car_list()
         if(results is None):
             return print("An error occurred")
-        for car in results:
-            caption = (
-                f"🚗 <b>{car['title']}</b>\n"
-                f"📍 <b>Distance:</b> {car['owner_distance']}\n"
-                f"📞 <b>Phone:</b> {car['owner_phone_number']}\n"
-                f"💰 <b>Price:</b> {car['car_price']}\n"
-                f"🛣️ <b>Mileage:</b> {car['car_mileage']}"
-            )
-            if(self.send_telegram_image_url(car['car_img_src'], caption) == False):
-                print("Failed to send a result!")
+        # for car in results:
+        #     caption = (
+        #         f"🚗 <b>{car['title']}</b>\n"
+        #         f"📍 <b>Distance:</b> {car['owner_distance']}\n"
+        #         f"📞 <b>Phone:</b> {car['owner_phone_number']}\n"
+        #         f"💰 <b>Price:</b> {car['car_price']}\n"
+        #         f"🛣️ <b>Mileage:</b> {car['car_mileage']}"
+        #     )
+        #     if(self.send_telegram_image_url(car['car_img_src'], caption) == False):
+        #         print("Failed to send a result!")
         
     def end(self) -> None:
         self._driver.quit()
