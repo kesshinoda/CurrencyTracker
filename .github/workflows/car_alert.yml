@@ -2,7 +2,7 @@ name: Car Alert Bot
 
 on:
   schedule:
-    - cron: "0 14 * * *"  # 14:00 UTC (9:00 AM Central)
+    - cron: "0 14 * * *"
   workflow_dispatch:
 
 jobs:
@@ -18,27 +18,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install system dependencies for Selenium
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            wget \
-            unzip \
-            xvfb \
-            libnss3 \
-            libatk-bridge2.0-0 \
-            libgtk-3-0 \
-            libxss1 \
-            libasound2 \
-            libgbm-dev
-
-      - name: Install Chromium and chromedriver
-        run: |
-          sudo apt-get install -y chromium-browser
-          wget -O /tmp/chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/125.0.6422.141/linux64/chromedriver-linux64.zip
-          unzip /tmp/chromedriver.zip -d /tmp/chromedriver
-          sudo mv /tmp/chromedriver/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
-          sudo chmod +x /usr/local/bin/chromedriver
+          sudo apt-get install -y wget unzip xvfb libxi6 libgconf-2-4 \
+            libappindicator1 libindicator7 libgbm1 libnss3 fonts-liberation \
+            xdg-utils libu2f-udev libvulkan1 chromium-driver google-chrome-stable
 
       - name: Install Python dependencies
         run: |

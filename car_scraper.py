@@ -14,10 +14,12 @@ from selenium.webdriver.support import expected_conditions as EC
 
 class UsedCarsScraper():
         
-    def __init__(self, headless:bool):
+    def __init__(self, is_test:bool):
         chrome_options = Options()
-        if(headless):
-            chrome_options.add_argument("--headless")
+        if(not is_test):
+            chrome_options.add_argument("--headless=new")  # Use "new" headless mode
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
         self._driver = webdriver.Chrome(options=chrome_options)
         return 
 
@@ -130,5 +132,6 @@ if __name__ == "__main__":
         "trim_codes": {"CIVIC": ["EX-L", "LX", "Sport", "Sport Touring"]},
     }
 
-    class_instance = UsedCarsScraper(headless=False)
+    
+    class_instance = UsedCarsScraper(is_test=False)
     class_instance.main(search_results_preference)
