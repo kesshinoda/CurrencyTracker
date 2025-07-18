@@ -61,7 +61,7 @@ class UsedCarsScraper():
         cars_info = []
         try :
             await self._page.wait_for_ready_state("complete")
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(3)
             items_list = await self._page.query_selector_all("div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']")
         except (TimeoutError, ProtocolException):
             print("Failed to load the results page")
@@ -85,25 +85,27 @@ class UsedCarsScraper():
         return response.status_code == 200
     
     async def main(self, search_results_preference:dict, headless:bool):
-        self._browser = await ZenDriver.start(headless=headless)
+        self._browser = await ZenDriver.start(headless=headless, no_sandbox=True)
         self._page = self._browser.main_tab
         await self._page.maximize()
         results_page_url = await self.construct_url(search_results_preference)
         await self._page.get(results_page_url)
         await asyncio.sleep(2)
         results = await self.get_car_list()
-        if(results is None):
-            return print("An error occurred")
-        for car in results:
-            caption = (
-                f"🚗 <b>{car['title']}</b>\n"
-                f"📍 <b>Distance:</b> {car['owner_distance']}\n"
-                f"📞 <b>Phone:</b> {car['owner_phone_number']}\n"
-                f"💰 <b>Price:</b> {car['car_price']}\n"
-                f"🛣️ <b>Mileage:</b> {car['car_mileage']}"
-            )
-            if(await self.send_telegram_image_url(car['car_img_src'], caption) == False):
-                print("Failed to send a result!")
+        # if(results is None):
+        #     return print("An error occurred")
+        # for car in results:
+        #     caption = (
+        #         f"🚗 <b>{car['title']}</b>\n"
+        #         f"📍 <b>Distance:</b> {car['owner_distance']}\n"
+        #         f"📞 <b>Phone:</b> {car['owner_phone_number']}\n"
+        #         f"💰 <b>Price:</b> {car['car_price']}\n"
+        #         f"🛣️ <b>Mileage:</b> {car['car_mileage']}"
+        #     )
+        #     if(await self.send_telegram_image_url(car['car_img_src'], caption) == False):
+        #         print("Failed to send a result!")
+        print("code executed successfully!!")
+        print(results)
 
 if __name__ == "__main__":
     # car_info = {
