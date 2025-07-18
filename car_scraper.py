@@ -1,11 +1,7 @@
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-import asyncio
 import os
 import requests
-import selenium
 import time
-import zendriver as ZenDriver
 
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -14,8 +10,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from zendriver.core.connection import ProtocolException
-from zendriver.core.element import Element as ZenElement
 
 
 class UsedCarsScraper():
