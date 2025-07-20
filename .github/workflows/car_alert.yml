@@ -27,8 +27,17 @@ jobs:
         run: |
           python -m playwright install
 
+      - name: Start Xvfb (Virtual Display)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+        shell: bash
+
       - name: Run car scraper script
         env:
+          DISPLAY: :99
           TELEGRAM_TOKEN_1: ${{ secrets.TELEGRAM_TOKEN_1 }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           LOCAL_PLACE_NAME: ${{ secrets.LOCAL_PLACE_NAME }}

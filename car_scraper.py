@@ -6,10 +6,9 @@ import time
 
 class UsedCarsScraper:
 
-    def __init__(self, is_test: bool):
-        self._is_test = is_test
+    def __init__(self):
         self._playwright = sync_playwright().start()
-        self._browser = self._playwright.chromium.launch(headless=not is_test)
+        self._browser = self._playwright.chromium.launch(headless=False)
         self._page = self._browser.new_page()
 
     def add_trims_to_url(self, url: str, trim_codes_dicts: dict) -> str:
@@ -60,10 +59,14 @@ class UsedCarsScraper:
         cars_info = []
         try:
             # Wait for item cards to appear, timeout 30s
-            self._page.wait_for_selector("div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']", timeout=60000)
+            self._page.wait_for_selector("div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']", timeout=30000)
             items_list = self._page.query_selector_all("div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']")
         except PlaywrightTimeoutError:
+            self._page.screenshot(path="headless_debug.png", full_page=True)
             print("Failed to load the results page")
+            html = self._page.content()
+            with open("debug.html", "w", encoding="utf-8") as f:
+                f.write(html)
             return None
 
         num_items_to_extract = min(list_length, len(items_list))
@@ -130,6 +133,6 @@ if __name__ == "__main__":
         "trim_codes": {"CIVIC": ["EX-L", "LX", "Sport", "Sport Touring"]},
     }
 
-    scraper = UsedCarsScraper(is_test=False) #Make sure to change is_test value here
+    scraper = UsedCarsScraper()
     scraper.main(search_results_preference)
     scraper.end()
