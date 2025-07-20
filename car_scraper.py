@@ -1,6 +1,7 @@
 import os
 import requests
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api._generated import ElementHandle as pw_element
 import time
 
 class UsedCarsScraper:
@@ -32,16 +33,17 @@ class UsedCarsScraper:
         constructed_url = self.add_trims_to_url(url, search_results_preference["trim_codes"])
         return constructed_url
 
-    def extract_car_info(self, car_info_tile) -> dict | None:
+    def extract_car_info(self, car_info_tile:pw_element, i:int) -> dict | None:
         try:
             title = car_info_tile.query_selector("h2[data-cmp='subheading']").inner_text().strip()
             car_img_src = car_info_tile.query_selector("img[data-cmp='inventoryImage']").get_attribute("src")
             car_mileage = car_info_tile.query_selector("div[data-cmp='mileageSpecification']").inner_text().strip()
-            car_price = car_info_tile.query_selector("div[data-cmp='pricing']").inner_text().strip()
+            car_price = car_info_tile.query_selector("div[data-cmp='pricing']").inner_text().split("\n")[0].strip()
+            owner_name = car_info_tile.query_selector("span.padding-left-1.ellipsis-truncated").inner_text().strip()
             owner_distance = car_info_tile.query_selector("div[data-cmp='ownerDistance']").inner_text().strip()
             owner_phone_number = car_info_tile.query_selector("span[data-cmp='phoneNumber']").inner_text().strip()
         except Exception as e:
-            print(f"Failed to extract car info: {e}")
+            print(f"Failed to extract car info at the index {i}: {e}")
             return None
 
         return {
@@ -49,6 +51,7 @@ class UsedCarsScraper:
             "car_img_src": car_img_src,
             "car_mileage": car_mileage,
             "car_price": car_price,
+            "owner_name": owner_name,
             "owner_distance": owner_distance,
             "owner_phone_number": owner_phone_number,
         }
@@ -57,15 +60,16 @@ class UsedCarsScraper:
         cars_info = []
         try:
             # Wait for item cards to appear, timeout 30s
-            self._page.wait_for_selector("div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']", timeout=30000)
+            self._page.wait_for_selector("div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']", timeout=60000)
             items_list = self._page.query_selector_all("div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']")
         except PlaywrightTimeoutError:
             print("Failed to load the results page")
             return None
 
         num_items_to_extract = min(list_length, len(items_list))
-        for i in range(num_items_to_extract):
-            extracted_info = self.extract_car_info(items_list[i])
+        # The first car is displayed by a sponsor, which I am not interested
+        for i in range(1, num_items_to_extract+1):
+            extracted_info = self.extract_car_info(items_list[i], i)
             if extracted_info is None:
                 return None
             print(extracted_info)
@@ -94,16 +98,18 @@ class UsedCarsScraper:
             return
 
         # Uncomment to send Telegram messages
-        # for car in results:
-        #     caption = (
-        #         f"🚗 <b>{car['title']}</b>\n"
-        #         f"📍 <b>Distance:</b> {car['owner_distance']}\n"
-        #         f"📞 <b>Phone:</b> {car['owner_phone_number']}\n"
-        #         f"💰 <b>Price:</b> {car['car_price']}\n"
-        #         f"🛣️ <b>Mileage:</b> {car['car_mileage']}"
-        #     )
-        #     if not self.send_telegram_image_url(car['car_img_src'], caption):
-        #         print("Failed to send a result!")
+        for car in results:
+            caption = (
+                f"🚗 <b>{car['title']}</b>\n"
+                f"👨🏻‍💼 <b>Owner/Dealership:</b> {car['owner_name']}\n"
+                f"📍 <b>Distance:</b> {car['owner_distance']}\n"
+                f"📞 <b>Phone:</b> {car['owner_phone_number']}\n"
+                f"💰 <b>Price:</b> {car['car_price']}\n"
+                f"🛣️ <b>Mileage:</b> {car['car_mileage']}"
+            )
+            if not self.send_telegram_image_url(car['car_img_src'], caption):
+                print("Failed to send a result!")
+                return 
 
     def end(self) -> None:
         self._browser.close()
@@ -124,6 +130,6 @@ if __name__ == "__main__":
         "trim_codes": {"CIVIC": ["EX-L", "LX", "Sport", "Sport Touring"]},
     }
 
-    scraper = UsedCarsScraper(is_test=True)
+    scraper = UsedCarsScraper(is_test=False) #Make sure to change is_test value here
     scraper.main(search_results_preference)
     scraper.end()
