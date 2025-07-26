@@ -6,10 +6,11 @@ import time
 
 class UsedCarsScraper:
 
-    def __init__(self):
+    def __init__(self, test:bool):
         self._playwright = sync_playwright().start()
         self._browser = self._playwright.chromium.launch(headless=False)
         self._page = self._browser.new_page()
+        self._is_test = test
 
     def add_trims_to_url(self, url: str, trim_codes_dicts: dict) -> str:
         for model in trim_codes_dicts.keys():
@@ -39,11 +40,15 @@ class UsedCarsScraper:
             car_mileage = car_info_tile.query_selector("div[data-cmp='mileageSpecification']").inner_text().strip()
             car_price = car_info_tile.query_selector("div[data-cmp='pricing']").inner_text().split("\n")[0].strip()
             owner_name = car_info_tile.query_selector("span.padding-left-1.ellipsis-truncated").inner_text().strip()
-            owner_distance = car_info_tile.query_selector("div[data-cmp='ownerDistance']").inner_text().strip()
-            owner_phone_number = car_info_tile.query_selector("span[data-cmp='phoneNumber']").inner_text().strip()
+            owner_distance = car_info_tile.query_selector("div[data-cmp='ownerDistance']").inner_text().strip() 
         except Exception as e:
             print(f"Failed to extract car info at the index {i}: {e}")
             return None
+        try:
+            # Phone number could be hidden sometimes
+            owner_phone_number = car_info_tile.query_selector("span[data-cmp='phoneNumber']").inner_text().strip()
+        except AttributeError:
+            owner_phone_number = "N/A"
 
         return {
             "title": title,
@@ -55,18 +60,19 @@ class UsedCarsScraper:
             "owner_phone_number": owner_phone_number,
         }
 
-    def get_car_list(self, list_length: int = 3) -> list | None:
+    def get_car_list(self, list_length: int = 5) -> list | None:
         cars_info = []
         try:
             # Wait for item cards to appear, timeout 30s
             self._page.wait_for_selector("div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']", timeout=30000)
             items_list = self._page.query_selector_all("div[data-cmp='inventoryListing'] > div > div[data-cmp='itemCard']")
         except PlaywrightTimeoutError:
-            self._page.screenshot(path="headless_debug.png", full_page=True)
             print("Failed to load the results page")
-            html = self._page.content()
-            with open("debug.html", "w", encoding="utf-8") as f:
-                f.write(html)
+            if(self._is_test):
+                self._page.screenshot(path="headless_debug.png", full_page=True)
+                html = self._page.content()
+                with open("debug.html", "w", encoding="utf-8") as f:
+                    f.write(html)
             return None
 
         num_items_to_extract = min(list_length, len(items_list))
@@ -93,14 +99,27 @@ class UsedCarsScraper:
 
     def main(self, search_results_preference: dict):
         results_page_url = self.construct_url(search_results_preference)
-        self._page.goto(results_page_url)
-        time.sleep(10)  # allow page to load fully
-        results = self.get_car_list()
-        if results is None:
-            print("An error occurred")
-            return
+        MAXIMUM_TRIAL = 5
+        results = None
+        trial = 0
+        while(results is None and trial < MAXIMUM_TRIAL):
+            try:
+                self._page.goto(results_page_url)
+            except Exception as e:
+                print(f"The page did not load due to an exception: {e}")
+                trial +=1
+                continue
+            time.sleep(10)  # allow page to load fully
+            results = self.get_car_list()
+            if results is None:
+                print("An error occurred")
+                trial += 1
+        if(results is None):
+            print("Failed to get results for 5 times")
+            return 
 
-        # Uncomment to send Telegram messages
+        if(self._is_test):
+            return
         for car in results:
             caption = (
                 f"🚗 <b>{car['title']}</b>\n"
@@ -128,11 +147,11 @@ if __name__ == "__main__":
         "city_state": os.getenv("LOCAL_PLACE_NAME"),  # <city_name>-<state_abbreviation_code> with lower case
         "deal_type": "greatprice",
         "inlude_delivery_options": "off",
-        "search_radius": "200",
+        "search_radius": "400",
         "sort_type": "derivedpriceASC",
         "trim_codes": {"CIVIC": ["EX-L", "LX", "Sport", "Sport Touring"]},
     }
 
-    scraper = UsedCarsScraper()
+    scraper = UsedCarsScraper(test=False)
     scraper.main(search_results_preference)
     scraper.end()
