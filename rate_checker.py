@@ -1,3 +1,4 @@
+import asyncio
 import warnings
 warnings.filterwarnings(
     "ignore",
@@ -77,8 +78,9 @@ def check_rate() -> None:
             print(f"ALERT: Rate increased by {diff:.2f} since yesterday.")
             alert = True
 
+    alert = True
     if alert:
-        send_telegram_alert(rate)
+        asyncio.run(send_telegram_alert(rate))
     else:
         print("No alert conditions met. No action taken.")
 
@@ -87,11 +89,11 @@ def check_rate() -> None:
     history[today_str] = rate
     save_rate_history(history)
 
-def send_telegram_alert(rate) -> None:
+async def send_telegram_alert(rate) -> None:
     try:
         bot = Bot(token=TELEGRAM_TOKEN)
         msg = f"USD/JPY Alert: {rate:.2f} ¥/USD — consider transferring!"
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=msg)
+        await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=msg)
         print("📨 Telegram alert sent.")
     except Exception as e:
         print(f"Failed to send Telegram alert: {e}")
