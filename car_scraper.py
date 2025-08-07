@@ -75,7 +75,7 @@ class UsedCarsScraper:
                     f.write(html)
             return None
 
-        num_items_to_extract = min(list_length, len(items_list))
+        num_items_to_extract = min(list_length, len(items_list)-1)
         # The first car is displayed by a sponsor, which I am not interested
         for i in range(1, num_items_to_extract+1):
             extracted_info = self.extract_car_info(items_list[i], i)
